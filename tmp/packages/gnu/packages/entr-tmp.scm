@@ -16,7 +16,7 @@
 ;;; You should have received a copy of the GNU General Public License
 ;;; along with GNU Guix.  If not, see <http://www.gnu.org/licenses/>.
 
-(define-module (gnu packages entr)
+(define-module (gnu packages entr-tmp)
   #:use-module (gnu packages base)
   #:use-module (gnu packages python)
   #:use-module (guix licenses)
@@ -26,7 +26,7 @@
   #:use-module (guix build-system gnu)
   #:use-module (guix build-system python))
 
-(define-public entr-personal
+(define-public entr-3.6-tmp
   (package
     (name "entr")
     (version "3.6")
@@ -37,6 +37,49 @@
               (sha256
                (base32
                 "1sy81np6kgmq04kfn2ckf4fp7jcf5d1963shgmapx3al3kc4c9x4"))))
+    (build-system gnu-build-system)
+    (arguments
+     `(#:test-target "test"
+       #:phases (modify-phases %standard-phases
+                  (replace 'configure
+                    (lambda* (#:key outputs #:allow-other-keys)
+                      (let ((out (assoc-ref outputs "out")))
+                        (setenv "CONFIG_SHELL" (which "bash"))
+                        (setenv "CC" (which "gcc"))
+                        (setenv "DESTDIR" (string-append out "/"))
+                        (setenv "PREFIX" "")
+                        (setenv "MANPREFIX" "man")
+                        (zero? (system* "./configure")))))
+                  (add-before 'build 'remove-fhs-file-names
+                    (lambda _
+                      ;; Use the tools available in $PATH.
+                      (substitute* "entr.c"
+                        (("/bin/cat") "cat")
+                        (("/usr/bin/clear") "clear")))))))
+    (home-page "http://entrproject.org/")
+    (synopsis "Run arbitrary commands when files change")
+    (description
+     "entr is a zero-configuration tool with no external build- or run-time
+dependencies.  The interface to entr is not only minimal, it aims to be simple
+enough to create a new category of ad hoc automation.  These micro-tests
+reduce keystrokes, but more importantly they emphasize the utility of
+automated checks.")
+
+    ;; Per 'LICENSE', portability code under missing/ is under BSD-2.
+    (license isc)))
+
+
+(define-public entr-3.5-tmp
+  (package
+    (name "entr")
+    (version "3.5")
+    (source (origin
+              (method url-fetch)
+              (uri (string-append "http://entrproject.org/code/entr-"
+                                  version ".tar.gz"))
+              (sha256
+               (base32
+                "05k4jyjna0pr2dalwc1l1dhrcyk6pw7hbss7jl4ykwfadcs5br73"))))
     (build-system gnu-build-system)
     (arguments
      `(#:test-target "test"
